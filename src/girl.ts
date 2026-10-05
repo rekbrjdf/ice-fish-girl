@@ -1,5 +1,6 @@
-export const SKELETON = "/assets/anims_v23/fishing.json";
-export const ATLAS = "/assets/anims_v23/fishing_girl.atlas";
+// BASE_URL === "/ice-fish-girl/" в сборке для Pages, поэтому путь не может быть абсолютным от корня домена.
+export const SKELETON = `${import.meta.env.BASE_URL}assets/anims_v23/fishing.json`;
+export const ATLAS = `${import.meta.env.BASE_URL}assets/anims_v23/fishing_girl.atlas`;
 
 export const GIRL_SLOTS = new Set([
   "1212121213",
