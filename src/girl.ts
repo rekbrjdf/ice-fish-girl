@@ -1,7 +1,5 @@
-const asset = (file: string) => `${import.meta.env.BASE_URL}assets/anims_v23/${file}`;
-
-export const SKELETON = asset("fishing.json");
-export const ATLAS = asset("fishing_girl.atlas");
+export const SKELETON = "/assets/anims_v23/fishing.json";
+export const ATLAS = "/assets/anims_v23/fishing_girl.atlas";
 
 export const GIRL_SLOTS = new Set([
   "1212121213",
@@ -29,3 +27,5 @@ export const GIRL_SLOTS = new Set([
 export const RIG_PREFIX = "udochka/";
 
 export const GIRL_ANIMATION = "2x_6x";
+
+export const GIRL_SKIN = "Blue";
