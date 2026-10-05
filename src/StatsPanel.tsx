@@ -53,6 +53,13 @@ const select: React.CSSProperties = { ...control, flex: 1, minWidth: 0 };
 
 const toggle: React.CSSProperties = { ...control, width: 28, padding: "5px 0", lineHeight: 1 };
 
+const dprSelect: React.CSSProperties = { ...control, padding: "1px 4px", cursor: "pointer" };
+
+const DPR_STEPS = [0.5, 0.75, 1, 1.5, 2, 3];
+
+const dprOptions = (device: number) =>
+  [...new Set([...DPR_STEPS, device])].sort((a, b) => a - b);
+
 const fpsColor = (fps: number) => (fps >= 55 ? "#7ee787" : fps >= 40 ? "#e3b341" : "#ff7b72");
 
 const num = (value: number, digits = 1) => value.toFixed(digits);
@@ -68,10 +75,13 @@ interface DetailsProps {
   stats: Stats;
   showRig: boolean | null;
   onShowRig: (value: boolean) => void;
+  dpr: number;
+  deviceDpr: number;
+  onDpr: (value: number) => void;
   mode: string | null;
 }
 
-const Details = ({ stats, showRig, onShowRig, mode }: DetailsProps) => (
+const Details = ({ stats, showRig, onShowRig, dpr, deviceDpr, onDpr, mode }: DetailsProps) => (
   <>
     <div style={section}>frame</div>
     <Row name="fps min / max" value={`${num(stats.fpsMin)} / ${num(stats.fpsMax)}`} />
@@ -86,6 +96,16 @@ const Details = ({ stats, showRig, onShowRig, mode }: DetailsProps) => (
     <Row name="texture binds" value={String(stats.textureBinds)} />
     <Row name="canvas" value={`${stats.canvas} @${num(stats.resolution, 2)}x`} />
     <Row name="pixels" value={`${num(stats.pixels / 1e6, 2)} MP`} />
+    <label style={{ ...row, cursor: "pointer" }}>
+      <span style={label}>dpr</span>
+      <select style={dprSelect} value={dpr} onChange={(e) => onDpr(Number(e.target.value))}>
+        {dprOptions(deviceDpr).map((value) => (
+          <option key={value} value={value}>
+            {num(value, 2)}x{value === deviceDpr ? " device" : ""}
+          </option>
+        ))}
+      </select>
+    </label>
 
     <div style={section}>spine</div>
     <Row name="bones" value={String(stats.bones)} />
@@ -124,10 +144,23 @@ interface Props {
   onExample: (value: ExampleId) => void;
   showRig: boolean | null;
   onShowRig: (value: boolean) => void;
+  dpr: number;
+  deviceDpr: number;
+  onDpr: (value: number) => void;
   mode: string | null;
 }
 
-export const StatsPanel = ({ stats, example, onExample, showRig, onShowRig, mode }: Props) => {
+export const StatsPanel = ({
+  stats,
+  example,
+  onExample,
+  showRig,
+  onShowRig,
+  dpr,
+  deviceDpr,
+  onDpr,
+  mode,
+}: Props) => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -162,7 +195,15 @@ export const StatsPanel = ({ stats, example, onExample, showRig, onShowRig, mode
           {mode !== null && <Row name="mode" value={mode} />}
         </div>
       ) : (
-        <Details stats={stats} showRig={showRig} onShowRig={onShowRig} mode={mode} />
+        <Details
+          stats={stats}
+          showRig={showRig}
+          onShowRig={onShowRig}
+          dpr={dpr}
+          deviceDpr={deviceDpr}
+          onDpr={onDpr}
+          mode={mode}
+        />
       )}
     </div>
   );

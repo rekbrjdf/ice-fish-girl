@@ -14,6 +14,7 @@ import { attachStats, type Stats } from "./stats";
 
 interface Props {
   showRig: boolean;
+  dpr: number;
   onStats: (stats: Stats) => void;
 }
 
@@ -88,16 +89,21 @@ const applyVisibility = (spine: Spine, showRig: boolean) => {
   }
 };
 
-export const GirlStage = ({ showRig, onStats }: Props) => {
+export const GirlStage = ({ showRig, dpr, onStats }: Props) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const spineRef = useRef<Spine | null>(null);
   const showRigRef = useRef(showRig);
   showRigRef.current = showRig;
   const boundsRef = useRef<Rect>({ x: 0, y: 0, width: 1, height: 1 });
+  const appRef = useRef<Application | null>(null);
+  const layoutRef = useRef<(() => void) | null>(null);
+  const dprRef = useRef(dpr);
+  dprRef.current = dpr;
 
   useEffect(() => {
     const host = hostRef.current!;
     const app = new Application();
+    appRef.current = app;
     let disposed = false;
     let spine: Spine | null = null;
     let detachStats: (() => void) | null = null;
@@ -113,13 +119,14 @@ export const GirlStage = ({ showRig, onStats }: Props) => {
         height / 2 - (bounds.y + bounds.height / 2) * scale,
       );
     };
+    layoutRef.current = layout;
 
     (async () => {
       await app.init({
         resizeTo: host,
         backgroundAlpha: 0,
         antialias: true,
-        resolution: Math.min(window.devicePixelRatio, 2),
+        resolution: dprRef.current,
         autoDensity: true,
         preference: "webgl",
       });
@@ -164,6 +171,8 @@ export const GirlStage = ({ showRig, onStats }: Props) => {
     return () => {
       disposed = true;
       spineRef.current = null;
+      appRef.current = null;
+      layoutRef.current = null;
       detachStats?.();
       if (app.renderer) {
         app.renderer.off("resize", layout);
@@ -171,6 +180,15 @@ export const GirlStage = ({ showRig, onStats }: Props) => {
       }
     };
   }, [onStats]);
+
+  // Разрешение меняется на живом рендерере: пересоздание Application означало бы
+  // повторную загрузку атласа и сброс анимации.
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app?.renderer) return;
+    app.renderer.resize(app.screen.width, app.screen.height, dpr);
+    layoutRef.current?.();
+  }, [dpr]);
 
   return <div ref={hostRef} style={{ position: "absolute", inset: 0 }} />;
 };

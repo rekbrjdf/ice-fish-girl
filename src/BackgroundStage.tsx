@@ -13,6 +13,7 @@ import {
 import { attachStats, type Stats } from "./stats";
 
 interface Props {
+  dpr: number;
   onStats: (stats: Stats) => void;
   onMode?: (mode: BackgroundMode) => void;
 }
@@ -21,14 +22,19 @@ interface Props {
 // и картинка не проседает в середине перехода.
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
 
-export const BackgroundStage = ({ onStats, onMode }: Props) => {
+export const BackgroundStage = ({ dpr, onStats, onMode }: Props) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const onModeRef = useRef(onMode);
   onModeRef.current = onMode;
+  const appRef = useRef<Application | null>(null);
+  const layoutRef = useRef<(() => void) | null>(null);
+  const dprRef = useRef(dpr);
+  dprRef.current = dpr;
 
   useEffect(() => {
     const host = hostRef.current!;
     const app = new Application();
+    appRef.current = app;
     let disposed = false;
     let detachStats: (() => void) | null = null;
     let cycle: number | null = null;
@@ -58,6 +64,7 @@ export const BackgroundStage = ({ onStats, onMode }: Props) => {
         layer.position.set(width / 2, height / 2);
       }
     };
+    layoutRef.current = layout;
 
     const startTransition = (mode: BackgroundMode) => {
       if (!incomingSprite || !incomingSpine || transition) return;
@@ -117,7 +124,7 @@ export const BackgroundStage = ({ onStats, onMode }: Props) => {
         resizeTo: host,
         backgroundAlpha: 0,
         antialias: true,
-        resolution: Math.min(window.devicePixelRatio, 2),
+        resolution: dprRef.current,
         autoDensity: true,
         preference: "webgl",
       });
@@ -179,6 +186,8 @@ export const BackgroundStage = ({ onStats, onMode }: Props) => {
 
     return () => {
       disposed = true;
+      appRef.current = null;
+      layoutRef.current = null;
       if (cycle !== null) window.clearInterval(cycle);
       detachStats?.();
       if (app.renderer) {
@@ -188,6 +197,14 @@ export const BackgroundStage = ({ onStats, onMode }: Props) => {
       }
     };
   }, [onStats]);
+
+  // Разрешение меняется на живом рендерере, иначе кроссфейд сбрасывался бы на каждом переключении.
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app?.renderer) return;
+    app.renderer.resize(app.screen.width, app.screen.height, dpr);
+    layoutRef.current?.();
+  }, [dpr]);
 
   return <div ref={hostRef} style={{ position: "absolute", inset: 0 }} />;
 };
